@@ -1,0 +1,242 @@
+// Game Point — database schema
+// Now configured for PostgreSQL (Neon) for production deployment.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Note: enum-like fields below (skillLevel, status, etc.) are plain String
+// fields, validated in app code (see zod schemas in app/api/**).
+//
+// Valid values by field:
+//   Profile.status      -> "ONLINE" | "AWAY" | "OFFLINE"
+//   Battle.skillLevel    -> "CASUAL" | "INTERMEDIATE" | "COMPETITIVE"
+//   Battle.status        -> "WAITING" | "ACCEPTED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | "DECLINED"
+//   Report.status        -> "OPEN" | "REVIEWED" | "DISMISSED"
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER") // USER | ADMIN
+  createdAt    DateTime @default(now())
+
+  profile   Profile?
+  userGames UserGame[]
+  posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+
+  following Follow[] @relation("Following")
+  followers Follow[] @relation("Followers")
+
+  conversations ConversationParticipant[]
+  messages      Message[]
+  notifications Notification[] @relation("NotificationRecipient")
+
+  battlesCreated Battle[]            @relation("BattleCreator")
+  battleEntries  BattleParticipant[]
+
+  reportsFiled  Report[] @relation("ReportedBy")
+  reportsAgainst Report[] @relation("ReportedUser")
+}
+
+model Profile {
+  id            String       @id @default(cuid())
+  userId        String       @unique
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  displayName   String?
+  gamerTag      String?
+  bio           String?
+  avatarUrl     String?
+  country       String?
+  lookingFor    String?
+  playStyle     String?
+  status        String       @default("OFFLINE")
+  lookingToPlay Boolean      @default(false)
+  wins          Int          @default(0)
+  losses        Int          @default(0)
+  updatedAt     DateTime     @updatedAt
+}
+
+model Category {
+  id    String @id @default(cuid())
+  name  String @unique
+  emoji String
+  games Game[]
+}
+
+model Game {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  name       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  accentFrom String   @default("#3DA9FC")
+  accentTo   String   @default("#28E4E0")
+  coverUrl   String?
+  createdAt  DateTime @default(now())
+
+  userGames UserGame[]
+  posts     Post[]
+  battles   Battle[]
+}
+
+model UserGame {
+  id     String @id @default(cuid())
+  userId String
+  gameId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game   Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String?
+  game      Game?    @relation(fields: [gameId], references: [id])
+  caption   String
+  createdAt DateTime @default(now())
+
+  images   PostImage[]
+  comments Comment[]
+  likes    Like[]
+}
+
+model PostImage {
+  id     String @id @default(cuid())
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url    String
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+model Follow {
+  id          String @id @default(cuid())
+  followerId  String
+  followingId String
+  follower    User   @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User   @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+}
+
+model Conversation {
+  id           String                     @id @default(cuid())
+  createdAt    DateTime                   @default(now())
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content        String
+  battleCode     String?
+  createdAt      DateTime     @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  recipientId String
+  recipient   User     @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  type        String
+  message     String
+  link        String?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Battle {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  gameId      String
+  game        Game         @relation(fields: [gameId], references: [id])
+  creatorId   String
+  creator     User         @relation("BattleCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  mode        String
+  platform    String
+  skillLevel  String       @default("CASUAL")
+  status      String       @default("WAITING")
+  createdAt   DateTime     @default(now())
+
+  participants BattleParticipant[]
+  result       BattleResult?
+}
+
+model BattleParticipant {
+  id       String @id @default(cuid())
+  battleId String
+  battle   Battle @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isWinner Boolean?
+
+  @@unique([battleId, userId])
+}
+
+model BattleResult {
+  id            String   @id @default(cuid())
+  battleId      String   @unique
+  battle        Battle   @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  winnerId      String?
+  scoreSummary  String?
+  proofImageUrl String?
+  reportedAt    DateTime @default(now())
+}
+
+model Report {
+  id          String       @id @default(cuid())
+  reporterId  String
+  reporter    User         @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUserId String?
+  targetUser  User?        @relation("ReportedUser", fields: [targetUserId], references: [id])
+  targetType  String
+  targetId    String
+  reason      String
+  status      String       @default("OPEN")
+  createdAt   DateTime     @default(now())
+}

@@ -1,0 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  background-color: #070b14;
+  color: #eef2ff;
+  font-family: "Rajdhani", sans-serif;
+}
+
+.font-display {
+  font-family: "Orbitron", sans-serif;
+}
+
+.glass-card {
+  background: rgba(13, 19, 34, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  border-radius: 1rem;
+}
+
+.glow-border {
+  box-shadow: 0 0 0 1px rgba(61, 169, 252, 0.35), 0 0 24px rgba(61, 169, 252, 0.15);
+}
+
+.btn-neon {
+  background: linear-gradient(135deg, #3da9fc, #28e4e0);
+  color: #051019;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.4rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-neon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(61, 169, 252, 0.35);
+}
+.btn-neon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  padding: 0.6rem 1.4rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.game-card {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.game-card:hover {
+  transform: translateY(-4px) scale(1.015);
+}
+
+input,
+textarea,
+select {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  color: #eef2ff;
+  width: 100%;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #3da9fc;
+  box-shadow: 0 0 0 3px rgba(61, 169, 252, 0.2);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(61, 169, 252, 0.3);
+  border-radius: 999px;
+}
