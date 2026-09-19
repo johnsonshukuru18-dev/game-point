@@ -41,7 +41,7 @@ export default function NotificationsPage() {
             </div>
           </Link>
         ))}
-        {notifications.length === 0 && <p className="text-sm text-white/40">You're all caught up.</p>}
+        {notifications.length === 0 && <p className="text-sm text-white/40">You&apos;re all caught up.</p>}
       </div>
     </div>
   );

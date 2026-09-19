@@ -30,7 +30,7 @@ export default function AdminPage() {
       <div className="max-w-lg mx-auto px-4 pt-16 text-center">
         <p className="text-neon-red font-display text-lg">Admins only.</p>
         <p className="text-sm text-white/50 mt-2">
-          This account doesn't have admin access. To make a user an admin, set their <code>role</code> to{" "}
+          This account doesn&apos;t have admin access. To make a user an admin, set their <code>role</code> to{" "}
           <code>&quot;ADMIN&quot;</code> in the database (e.g. via <code>npx prisma studio</code>).
         </p>
       </div>

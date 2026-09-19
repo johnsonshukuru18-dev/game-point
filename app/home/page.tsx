@@ -57,7 +57,7 @@ export default function HomePage() {
           ))}
           {myGames.length === 0 && (
             <p className="text-xs text-white/40">
-              You haven't selected any games yet.{" "}
+              You haven&apos;t selected any games yet.{" "}
               <Link href="/games" className="text-neon-cyan">
                 Browse games
               </Link>
