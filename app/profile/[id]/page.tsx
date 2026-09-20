@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/useUser";
 import PostCard from "@/components/PostCard";
+import { uploadImageFile } from "@/lib/uploadClient";
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
   const { user } = useUser();
@@ -14,6 +15,9 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   const [bio, setBio] = useState("");
   const [gamerTag, setGamerTag] = useState("");
   const [saving, setSaving] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = user?.id === params.id;
 
@@ -69,6 +73,32 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     }
   }
 
+  async function handleAvatarPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError("");
+    setAvatarUploading(true);
+    try {
+      const url = await uploadImageFile(file, "avatars");
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: url }),
+      });
+      if (res.ok) {
+        load();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setAvatarError(data.error || "Could not save profile picture");
+      }
+    } catch (err: any) {
+      setAvatarError(err.message || "Upload failed");
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  }
+
   if (!profileUser) return <div className="max-w-3xl mx-auto px-4 pt-8 text-white/40">Loading profile…</div>;
 
   const p = profileUser.profile;
@@ -78,13 +108,27 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
       <div className="glass-card p-6 mb-6">
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center font-display text-xl">
-              {(p?.displayName || profileUser.username).slice(0, 2).toUpperCase()}
+            <div className="relative">
+              {p?.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.avatarUrl} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-neon-purple to-neon-blue flex items-center justify-center font-display text-xl">
+                  {(p?.displayName || profileUser.username).slice(0, 2).toUpperCase()}
+                </div>
+              )}
+              {isOwnProfile && (
+                <label className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-neon-blue text-[#051019] flex items-center justify-center text-xs cursor-pointer" title="Change profile picture">
+                  {avatarUploading ? "…" : "📷"}
+                  <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarPick} className="hidden" disabled={avatarUploading} />
+                </label>
+              )}
             </div>
             <div>
               <h1 className="font-display text-xl">{p?.displayName || profileUser.username}</h1>
               <p className="text-xs text-white/50">@{profileUser.username} {p?.gamerTag && `· #${p.gamerTag}`}</p>
               {p?.bio && <p className="text-sm text-white/70 mt-1 max-w-md">{p.bio}</p>}
+              {avatarError && <p className="text-neon-red text-xs mt-1">{avatarError}</p>}
             </div>
           </div>
           {!isOwnProfile ? (

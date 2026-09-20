@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@/lib/useUser";
 import PostCard from "@/components/PostCard";
+import { uploadImageFile } from "@/lib/uploadClient";
 
 export default function HomePage() {
   const { user } = useUser();
@@ -11,6 +12,10 @@ export default function HomePage() {
   const [myGames, setMyGames] = useState<any[]>([]);
   const [caption, setCaption] = useState("");
   const [posting, setPosting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -26,19 +31,48 @@ export default function HomePage() {
       .then((data) => setPosts(data.posts || []));
   }, [feedFilter]);
 
+  function handlePickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function submitPost() {
     if (!caption.trim()) return;
     setPosting(true);
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption, gameId: myGames[0]?.gameId }),
-    });
-    setPosting(false);
-    if (res.ok) {
-      const newPost = await res.json();
-      setPosts((prev) => [{ ...newPost, likeCount: 0, commentCount: 0, likedByMe: false, _count: { likes: 0, comments: 0 } }, ...prev]);
-      setCaption("");
+    setUploadError("");
+    try {
+      let imageUrls: string[] = [];
+      if (imageFile) {
+        const url = await uploadImageFile(imageFile, "posts");
+        imageUrls = [url];
+      }
+      const res = await fetch("/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caption, gameId: myGames[0]?.gameId, imageUrls }),
+      });
+      if (res.ok) {
+        const newPost = await res.json();
+        setPosts((prev) => [{ ...newPost, likeCount: 0, commentCount: 0, likedByMe: false, _count: { likes: 0, comments: 0 } }, ...prev]);
+        setCaption("");
+        clearImage();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setUploadError(data.error || "Could not create post");
+      }
+    } catch (err: any) {
+      setUploadError(err.message || "Upload failed");
+    } finally {
+      setPosting(false);
     }
   }
 
@@ -73,7 +107,25 @@ export default function HomePage() {
           onChange={(e) => setCaption(e.target.value)}
           rows={2}
         />
-        <div className="flex justify-end mt-2">
+        {imagePreview && (
+          <div className="relative mt-2 inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imagePreview} alt="Selected" className="rounded-lg h-32 object-cover" />
+            <button
+              onClick={clearImage}
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/70 text-white text-xs flex items-center justify-center"
+              title="Remove image"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {uploadError && <p className="text-neon-red text-xs mt-2">{uploadError}</p>}
+        <div className="flex justify-between items-center mt-2">
+          <label className="btn-ghost text-xs cursor-pointer">
+            📷 Add photo
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handlePickImage} className="hidden" />
+          </label>
           <button className="btn-neon text-sm" disabled={posting || !caption.trim()} onClick={submitPost}>
             {posting ? "Posting…" : "Post"}
           </button>
