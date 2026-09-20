@@ -26,6 +26,8 @@ model User {
   email        String   @unique
   passwordHash String
   role         String   @default("USER") // USER | ADMIN
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
   createdAt    DateTime @default(now())
 
   profile   Profile?

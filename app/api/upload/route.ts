@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     const url = await uploadImage(body.dataUri, folder);
     return jsonOk({ url });
   } catch (err: any) {
-    return jsonError(err.message || "Upload failed", 500);
+    console.error("Upload failed:", err);
+    return jsonError("Image upload failed. Please try again.", 500);
   }
 }

@@ -11,7 +11,11 @@ const schema = z.object({
     .max(20)
     .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers and underscores"),
   email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-zA-Z]/, "Password must include at least one letter")
+    .regex(/[0-9]/, "Password must include at least one number"),
   gameIds: z.array(z.string()).optional().default([]),
   playStyle: z.enum(["CASUAL", "COMPETITIVE", "BOTH"]).optional(),
   lookingFor: z.string().optional(),
