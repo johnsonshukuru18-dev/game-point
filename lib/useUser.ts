@@ -5,6 +5,7 @@ export interface CurrentUser {
   id: string;
   username: string;
   email: string;
+  role?: string;
   profile: { displayName?: string; gamerTag?: string; avatarUrl?: string } | null;
 }
 
