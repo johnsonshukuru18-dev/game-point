@@ -5,8 +5,11 @@
 
 html,
 body {
-  background-color: #070b14;
-  color: #eef2ff;
+  background-color: #07050f;
+  background-image: radial-gradient(circle at 15% 0%, rgba(124, 58, 237, 0.16), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(236, 72, 153, 0.12), transparent 45%);
+  background-attachment: fixed;
+  color: #f1edff;
   font-family: "Rajdhani", sans-serif;
 }
 
@@ -15,27 +18,27 @@ body {
 }
 
 .glass-card {
-  background: rgba(13, 19, 34, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(14px);
-  border-radius: 1rem;
+  background: rgba(18, 13, 34, 0.72);
+  border: 1px solid rgba(168, 85, 247, 0.14);
+  backdrop-filter: blur(16px);
+  border-radius: 1.25rem;
 }
 
 .glow-border {
-  box-shadow: 0 0 0 1px rgba(61, 169, 252, 0.35), 0 0 24px rgba(61, 169, 252, 0.15);
+  box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.35), 0 0 28px rgba(124, 58, 237, 0.2);
 }
 
 .btn-neon {
-  background: linear-gradient(135deg, #3da9fc, #28e4e0);
-  color: #051019;
+  background: linear-gradient(135deg, #7c3aed, #a855f7 50%, #ec4899);
+  color: #ffffff;
   font-weight: 700;
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.4rem;
+  border-radius: 0.9rem;
+  padding: 0.65rem 1.5rem;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 .btn-neon:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(61, 169, 252, 0.35);
+  box-shadow: 0 8px 28px rgba(168, 85, 247, 0.45);
 }
 .btn-neon:disabled {
   opacity: 0.5;
@@ -45,46 +48,48 @@ body {
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.75rem;
-  padding: 0.6rem 1.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 0.9rem;
+  padding: 0.65rem 1.5rem;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.4);
 }
 
 .game-card {
   transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border-radius: 1.25rem;
 }
 .game-card:hover {
   transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.35);
 }
 
 input,
 textarea,
 select {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  border-radius: 0.75rem;
   padding: 0.6rem 0.9rem;
-  color: #eef2ff;
+  color: #f1edff;
   width: 100%;
 }
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: #3da9fc;
-  box-shadow: 0 0 0 3px rgba(61, 169, 252, 0.2);
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.22);
 }
 
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(61, 169, 252, 0.3);
+  background: rgba(168, 85, 247, 0.35);
   border-radius: 999px;
 }

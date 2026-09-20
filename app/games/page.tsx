@@ -12,6 +12,7 @@ interface Category {
     name: string;
     accentFrom: string;
     accentTo: string;
+    coverUrl: string | null;
     _count: { userGames: number; posts: number; battles: number };
   }[];
 }
@@ -43,6 +44,7 @@ export default function GamesHubPage() {
                 name={g.name}
                 accentFrom={g.accentFrom}
                 accentTo={g.accentTo}
+                coverUrl={g.coverUrl}
                 playerCount={g._count.userGames}
                 postCount={g._count.posts}
               />
