@@ -69,33 +69,52 @@ export default function Navigation() {
         </button>
       </nav>
 
-      {/* Mobile floating bottom bar */}
-      <nav className="md:hidden fixed bottom-3 left-3 right-3 z-40 glass-card glow-border flex items-center justify-around py-2">
+      {/* Mobile floating bottom bar — now includes Profile so it's reachable
+          without the desktop rail. Padded for phones with a home-indicator
+          gesture bar (safe-area-inset-bottom). */}
+      <nav
+        className="md:hidden fixed bottom-2 left-2 right-2 z-40 glass-card glow-border flex items-center justify-around"
+        style={{ paddingTop: "0.5rem", paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         {NAV_ITEMS.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center text-[10px] px-2 py-1 rounded-lg ${
-              pathname.startsWith(item.href) ? "text-neon-cyan" : "text-white/50"
+            className={`flex flex-col items-center justify-center text-[10px] w-11 h-11 rounded-lg ${
+              pathname.startsWith(item.href) ? "text-neon-cyan bg-white/10" : "text-white/50"
             }`}
           >
             <span className="text-lg leading-none">{item.icon}</span>
-            {item.label}
+            <span className="mt-0.5 leading-none">{item.label}</span>
           </Link>
         ))}
+        {user && (
+          <Link
+            href={`/profile/${user.id}`}
+            className={`flex flex-col items-center justify-center text-[10px] w-11 h-11 rounded-lg ${
+              pathname.startsWith("/profile") ? "text-neon-cyan bg-white/10" : "text-white/50"
+            }`}
+          >
+            <span className="text-lg leading-none">👤</span>
+            <span className="mt-0.5 leading-none">You</span>
+          </Link>
+        )}
       </nav>
 
       {/* Floating action button */}
-      <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50">
+      <div
+        className="fixed right-4 md:right-6 z-50"
+        style={{ bottom: "calc(5.5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
         {fabOpen && (
           <div className="mb-3 flex flex-col gap-2 items-end">
-            <Link onClick={() => setFabOpen(false)} href="/battles?create=1" className="btn-neon text-sm shadow-glow">
+            <Link onClick={() => setFabOpen(false)} href="/battles?create=1" className="btn-neon text-sm shadow-glow whitespace-nowrap">
               ⚔ Create Battle
             </Link>
-            <Link onClick={() => setFabOpen(false)} href="/games?post=1" className="btn-neon text-sm shadow-glow">
+            <Link onClick={() => setFabOpen(false)} href="/games?post=1" className="btn-neon text-sm shadow-glow whitespace-nowrap">
               📸 New Post
             </Link>
-            <Link onClick={() => setFabOpen(false)} href="/players" className="btn-neon text-sm shadow-glow">
+            <Link onClick={() => setFabOpen(false)} href="/players" className="btn-neon text-sm shadow-glow whitespace-nowrap">
               👥 Find Player
             </Link>
           </div>

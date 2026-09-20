@@ -21,9 +21,6 @@ function MessagesPageInner() {
 
   useEffect(loadConversations, []);
 
-  // Poll the active conversation for new messages every 3 seconds — a real,
-  // functional stand-in for full WebSocket real-time (see README for the
-  // Socket.IO upgrade path).
   useEffect(() => {
     if (!activeId) return;
     let cancelled = false;
@@ -76,8 +73,8 @@ function MessagesPageInner() {
   const otherUser = activeConvo?.participants.find((p: any) => p.userId !== user?.id)?.user;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 pt-8 grid md:grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
-      <div className="glass-card p-3 overflow-y-auto">
+    <div className="max-w-5xl mx-auto px-4 pt-8 grid md:grid-cols-3 gap-4 h-[calc(100vh-9rem)] md:h-[calc(100vh-8rem)]">
+      <div className={`glass-card p-3 overflow-y-auto ${activeId ? "hidden md:block" : "block"}`}>
         <h2 className="font-display text-sm mb-3 px-2">Messages</h2>
         {conversations.map((c) => {
           const other = c.participants.find((p: any) => p.userId !== user?.id)?.user;
@@ -96,10 +93,13 @@ function MessagesPageInner() {
         {conversations.length === 0 && <p className="text-xs text-white/40 px-2">No conversations yet. Message someone from their profile.</p>}
       </div>
 
-      <div className="glass-card p-4 md:col-span-2 flex flex-col">
+      <div className={`glass-card p-4 md:col-span-2 flex-col ${activeId ? "flex" : "hidden md:flex"}`}>
         {activeId ? (
           <>
-            <div className="border-b border-white/10 pb-2 mb-3">
+            <div className="border-b border-white/10 pb-2 mb-3 flex items-center gap-2">
+              <button onClick={() => setActiveId(null)} className="md:hidden text-white/60 text-lg leading-none" aria-label="Back to conversations">
+                ←
+              </button>
               <p className="font-semibold text-sm">{otherUser?.profile?.displayName || otherUser?.username || "Conversation"}</p>
             </div>
             <div className="flex-1 overflow-y-auto space-y-2 mb-3">
