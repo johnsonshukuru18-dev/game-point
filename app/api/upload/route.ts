@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { getSession } from "@/lib/auth";
-import { uploadImage } from "@/lib/cloudinary";
+import { uploadImage } from "@/lib/blob";
 import { jsonError, jsonOk } from "@/lib/utils";
 
 const MAX_BASE64_BYTES = 8 * 1024 * 1024; // ~8MB safety cap
 
 // Accepts a JSON body: { dataUri: "data:image/png;base64,....", folder: "posts" | "avatars" }
-// and uploads it to Cloudinary, returning the hosted HTTPS URL.
+// and uploads it via Vercel Blob storage, returning the hosted HTTPS URL.
 export async function POST(req: NextRequest) {
   const session = getSession();
   if (!session) return jsonError("Not authenticated", 401);
