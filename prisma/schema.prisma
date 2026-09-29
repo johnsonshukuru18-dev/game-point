@@ -11,8 +11,13 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
-// Note: enum-like fields below (skillLevel, status, etc.) are plain String
-// fields, validated in app code (see zod schemas in app/api/**).
+// Note: SQLite doesn't support Prisma's native `enum` type, so the
+// "enum-like" fields below (skillLevel, status, etc.) are plain String
+// fields instead. The application code and API validation (see the zod
+// schemas in app/api/**) still restrict them to the same fixed set of
+// values — this is a database-portability choice, not a loosening of
+// validation. If you switch to PostgreSQL you can reintroduce real
+// `enum` types here if you'd like stricter DB-level enforcement.
 //
 // Valid values by field:
 //   Profile.status      -> "ONLINE" | "AWAY" | "OFFLINE"
@@ -48,6 +53,13 @@ model User {
 
   reportsFiled  Report[] @relation("ReportedBy")
   reportsAgainst Report[] @relation("ReportedUser")
+
+  // --- Premium Feature Expansion (added, nothing above this line changed) ---
+  seasonStats       SeasonStat[]
+  trophies          Trophy[]
+  subscription      Subscription?
+  squadMemberships  SquadMember[]
+  squadMessages     SquadMessage[]
 }
 
 model Profile {
@@ -59,18 +71,29 @@ model Profile {
   bio           String?
   avatarUrl     String?
   country       String?
-  lookingFor    String?
-  playStyle     String?
+  lookingFor    String? // FRIENDS | BATTLES | COMMUNITY | TIPS | TOURNAMENTS (comma separated)
+  playStyle     String? // CASUAL | COMPETITIVE | BOTH
   status        String       @default("OFFLINE")
   lookingToPlay Boolean      @default(false)
   wins          Int          @default(0)
   losses        Int          @default(0)
   updatedAt     DateTime     @updatedAt
+
+  // --- Premium Feature Expansion (added, nothing above this line changed) ---
+  level             Int      @default(1)
+  xp                Int      @default(0)
+  rankTier          String   @default("BRONZE") // BRONZE | SILVER | GOLD | PLATINUM | DIAMOND | MASTER
+  isVerified        Boolean  @default(false)
+  isPro             Boolean  @default(false)
+  proSince          DateTime?
+  mvpAwards         Int      @default(0)
+  currentWinStreak  Int      @default(0)
+  longestWinStreak  Int      @default(0)
 }
 
 model Category {
   id    String @id @default(cuid())
-  name  String @unique
+  name  String @unique // FOOTBALL, SHOOTER, RACING, OPEN_WORLD
   emoji String
   games Game[]
 }
@@ -109,6 +132,10 @@ model Post {
   game      Game?    @relation(fields: [gameId], references: [id])
   caption   String
   createdAt DateTime @default(now())
+
+  // --- Premium Feature Expansion (added, nothing above this line changed) ---
+  isPinned    Boolean @default(false)
+  pinnedOrder Int?    // 0, 1, 2 for the 3 featured slots; null when not pinned
 
   images   PostImage[]
   comments Comment[]
@@ -178,7 +205,7 @@ model Message {
   senderId       String
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
   content        String
-  battleCode     String?
+  battleCode     String? // set when a message is sharing a battle code
   createdAt      DateTime     @default(now())
 }
 
@@ -186,7 +213,7 @@ model Notification {
   id          String   @id @default(cuid())
   recipientId String
   recipient   User     @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  type        String
+  type        String // FOLLOW | LIKE | COMMENT | BATTLE_REQUEST | BATTLE_ACCEPTED | MESSAGE | BATTLE_RESULT
   message     String
   link        String?
   read        Boolean  @default(false)
@@ -200,7 +227,7 @@ model Battle {
   game        Game         @relation(fields: [gameId], references: [id])
   creatorId   String
   creator     User         @relation("BattleCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-  mode        String
+  mode        String // 1v1, 2v2, etc.
   platform    String
   skillLevel  String       @default("CASUAL")
   status      String       @default("WAITING")
@@ -237,9 +264,102 @@ model Report {
   reporter    User         @relation("ReportedBy", fields: [reporterId], references: [id], onDelete: Cascade)
   targetUserId String?
   targetUser  User?        @relation("ReportedUser", fields: [targetUserId], references: [id])
-  targetType  String
+  targetType  String // USER | POST | BATTLE
   targetId    String
   reason      String
   status      String       @default("OPEN")
   createdAt   DateTime     @default(now())
+}
+
+// ==========================================================================
+// Premium Feature Expansion — everything below is new (added on top of the
+// original working schema above; nothing above this line was changed).
+// ==========================================================================
+
+model Season {
+  id        String   @id @default(cuid())
+  number    Int      @unique
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  seasonStats SeasonStat[]
+  trophies    Trophy[]
+}
+
+model SeasonStat {
+  id       String @id @default(cuid())
+  seasonId String
+  season   Season @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp       Int    @default(0)
+  wins     Int    @default(0)
+  losses   Int    @default(0)
+  rankTier String @default("BRONZE")
+
+  @@unique([seasonId, userId])
+}
+
+model Trophy {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    String   // BATTLE_CHAMPION | TOURNAMENT_WINNER | MVP | TOP_100 | SEASONAL_REWARD
+  rarity      String   // COMMON | RARE | EPIC | LEGENDARY
+  title       String
+  description String?
+  iconUrl     String?
+  seasonId    String?
+  season      Season?  @relation(fields: [seasonId], references: [id])
+  earnedAt    DateTime @default(now())
+}
+
+model Subscription {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      String    @default("PRO_MONTHLY")
+  status    String    @default("INACTIVE") // INACTIVE | ACTIVE | CANCELLED
+  startedAt DateTime?
+  renewsAt  DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Squad {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  slug         String   @unique
+  description  String?
+  bannerUrl    String?
+  logoUrl      String?
+  primaryColor String?
+  createdAt    DateTime @default(now())
+
+  members  SquadMember[]
+  messages SquadMessage[]
+}
+
+model SquadMember {
+  id       String   @id @default(cuid())
+  squadId  String
+  squad    Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER") // LEADER | OFFICER | MEMBER
+  joinedAt DateTime @default(now())
+
+  @@unique([squadId, userId])
+}
+
+model SquadMessage {
+  id        String   @id @default(cuid())
+  squadId   String
+  squad     Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
 }
