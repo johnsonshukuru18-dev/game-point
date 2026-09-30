@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { jsonError, jsonOk } from "@/lib/utils";
+import { levelFromXp, rankTierFromLevel, XP_PER_WIN, XP_PER_LOSS, MVP_STREAK_INTERVAL } from "@/lib/gamification";
 
 const schema = z.object({
   winnerId: z.string(),
@@ -51,13 +52,56 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ),
   ]);
 
-  // Update win/loss records on each participant's profile.
+  // Update win/loss records, XP, level, rank, and win-streak/MVP tracking
+  // for each participant's profile (Premium Feature Expansion).
   for (const p of battle.participants) {
     const won = p.userId === parsed.data.winnerId;
-    await prisma.profile.updateMany({
-      where: { userId: p.userId },
-      data: won ? { wins: { increment: 1 } } : { losses: { increment: 1 } },
-    });
+
+    const profile = await prisma.profile.findUnique({ where: { userId: p.userId } });
+
+    if (profile) {
+      const newXp = profile.xp + (won ? XP_PER_WIN : XP_PER_LOSS);
+      const newLevel = levelFromXp(newXp);
+      const newRankTier = rankTierFromLevel(newLevel);
+      const newCurrentStreak = won ? profile.currentWinStreak + 1 : 0;
+      const newLongestStreak = Math.max(profile.longestWinStreak, newCurrentStreak);
+      const earnsMvp = won && newCurrentStreak > 0 && newCurrentStreak % MVP_STREAK_INTERVAL === 0;
+
+      await prisma.profile.update({
+        where: { userId: p.userId },
+        data: {
+          wins: won ? { increment: 1 } : undefined,
+          losses: !won ? { increment: 1 } : undefined,
+          xp: newXp,
+          level: newLevel,
+          rankTier: newRankTier,
+          currentWinStreak: newCurrentStreak,
+          longestWinStreak: newLongestStreak,
+          mvpAwards: earnsMvp ? { increment: 1 } : undefined,
+        },
+      });
+
+      if (earnsMvp) {
+        await prisma.trophy.create({
+          data: {
+            userId: p.userId,
+            category: "MVP",
+            rarity: "RARE",
+            title: `${newCurrentStreak}-Win Streak MVP`,
+            description: `Awarded for winning ${newCurrentStreak} battles in a row.`,
+          },
+        });
+        await prisma.notification.create({
+          data: {
+            recipientId: p.userId,
+            type: "BATTLE_RESULT",
+            message: `🏅 MVP! You're on a ${newCurrentStreak}-win streak.`,
+            link: `/profile/${p.userId}`,
+          },
+        });
+      }
+    }
+
     await prisma.notification.create({
       data: {
         recipientId: p.userId,
